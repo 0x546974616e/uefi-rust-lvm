@@ -1,0 +1,11 @@
+[package]
+name = "uefi-app"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "BOOTx64"
+path = "sources/main.rs"
+
+[dependencies]
+uefi-raw = { workspace = true }

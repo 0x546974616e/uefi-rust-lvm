@@ -1,0 +1,7 @@
+[workspace]
+resolver = "3"
+members = [ "crates/*" ]
+
+[workspace.dependencies]
+uefi-app = { path = "crates/uefi-app" }
+uefi-raw = { path = "crates/uefi-raw" }

@@ -1,0 +1,8 @@
+[package]
+name = "uefi-raw"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "uefi_raw"
+path = "sources/library.rs"
