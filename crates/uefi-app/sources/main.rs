@@ -30,44 +30,15 @@ pub type ImageHandle = u64;
 pub type Status = usize;
 
 
-macro_rules! dada {
-  (
-    struct $STRUCT_NAME:ident {
-      $(
-      $VIS:vis $FIELD:ident:
-        $(#[$META:tt])? $($TYPE:ty)?
-      ),* $(,)?
-    }
-  ) => {
-    struct $STRUCT_NAME {
-      $(
-        $VIS $FIELD: dada! { @type $(#[$META])? $($TYPE)? }
-      ),*
-    }
-  };
-
-  (@type #[todo]) => {
-    *const ()
-  };
-
-  (@type #[dada] $TYPE:ty) => {
-    *const $TYPE
-  };
-
-  (@type $(#[$META:meta])? $TYPE:ty ) => {
-    $(#[$META])? $TYPE
-  };
-
-}
-
-dada!( struct Dada {
-  pub vava: #[todo],
-  pub ok: #[dada] u32,
-  pub dada: u32,
-});
-// dada!( #[dada] usize );
-
 macro_rules! uefi_version {
+  ($VERSION:literal) => {
+    concat!(
+      "-- <i>UEFI Specification, Release ",
+        stringify!($VERSION),
+      ".</i>"
+    )
+  };
+
   ($VERSION:literal, $SECTION:literal) => {
     concat!(
       "-- <i>UEFI Specification, Release ",
@@ -81,26 +52,26 @@ macro_rules! uefi_version {
 
 macro_rules! uefi_struct {
   (
-    $( #[$STRUCT_ATTRIBUTE:meta] )*
+    $(#[$STRUCT_ATTRIBUTE:meta])*
     $STRUCT_VISIBILITY:vis struct $STRUCT_NAME:ident {
       $(
-        $( #[$FIELD_ATTRIBUTE:meta] )*
+        $(#[$FIELD_ATTRIBUTE:meta])*
         $FIELD_VISIBILITY:vis $FIELD_NAME:ident:
-          $( #[$TYPE_ATTRIBUTE:tt] )? $( $FIELD_TYPE:ty )?
+          $(#[$TYPE_ATTRIBUTE:tt])? $($FIELD_TYPE:ty)?
       ),* $(,)?
     }
   ) => {
     #[repr(C)]
-    $( #[$STRUCT_ATTRIBUTE] )*
+    $(#[$STRUCT_ATTRIBUTE])*
     #[allow(non_camel_case_types)]
     #[allow(non_snake_case)]
     $STRUCT_VISIBILITY struct $STRUCT_NAME {
       $(
-        $( #[$FIELD_ATTRIBUTE] )*
+        $(#[$FIELD_ATTRIBUTE])*
         $FIELD_VISIBILITY $FIELD_NAME:
           uefi_struct! {
-            @type $( #[$TYPE_ATTRIBUTE] )?
-              $( $FIELD_TYPE )?
+            @type $(#[$TYPE_ATTRIBUTE])?
+              $($FIELD_TYPE)?
           }
       ),*
     }
@@ -108,31 +79,34 @@ macro_rules! uefi_struct {
     impl $STRUCT_NAME {
       $(
         uefi_struct! {
-          @fn $( #[$TYPE_ATTRIBUTE] )?
-            $( #[$FIELD_ATTRIBUTE] )*
+          @fn $(#[$TYPE_ATTRIBUTE])?
+            $(#[$FIELD_ATTRIBUTE])*
             $FIELD_VISIBILITY $FIELD_NAME()
-              -> $( $FIELD_TYPE )?
+              -> $($FIELD_TYPE)?;
         }
       )*
     }
   };
 
-  (@type #[todo])             => { *const () };
+  (@type #[todo]) => { *const () };
   (@type #[pointer] $TYPE:ty) => { *const $TYPE };
-  (@type $TYPE:ty)            => { $TYPE };
+  (@type $TYPE:ty) => { $TYPE };
 
   (@fn #[pointer]
-    $( #[$FIELD_ATTRIBUTE:meta] )*
-    $VISIBILITY:vis $NAME:ident() -> $TYPE:ty
+    $(#[$FIELD_ATTRIBUTE:meta])*
+    $VISIBILITY:vis $NAME:ident() -> $TYPE:ty;
   ) => {
-    $( #[$FIELD_ATTRIBUTE] )*
+    $(#[$FIELD_ATTRIBUTE])*
+    #[allow(non_snake_case)]
     $VISIBILITY fn $NAME(&self) -> &$TYPE {
       // SAFETY: Callers know what they are doing...
       unsafe { self.$NAME.as_ref() }.unwrap()
     }
   };
 
-  (@fn $($TT:tt)*) => {}
+  (@fn $($TT:tt)*) => {
+    // Nothing to do here.
+  };
 }
 
 uefi_struct! {
@@ -154,101 +128,118 @@ uefi_struct! {
 /// ```
 macro_rules! uefi_protocol {
   (
-    #[guid]
-    $GUID_VISIBILITY:vis const $GUID_NAME:ident = {
-      $GUID_DATA_1:literal, $GUID_DATA_2:literal, $GUID_DATA_3:literal,
-      { $( $GUID_DATA_4:literal ),* $(,)? } $(,)?
-    } $(;)?
+    $(
+      #[guid]
+      $GUID_VISIBILITY:vis const $GUID_NAME:ident = {
+        $GUID_DATA_1:literal, $GUID_DATA_2:literal, $GUID_DATA_3:literal,
+        { $($GUID_DATA_4:literal),* $(,)? } $(,)?
+      } $(;)?
+    )?
 
-    #[protocol($PROTOCOL_VERSION:literal, $PROTOCOL_SECTION:literal)]
-    $( #[$PROTOCOL_ATTRIBUTE:meta] )*
+    #[version($($PROTOCOL_VERSION:literal),+)]
+    $(#[$PROTOCOL_ATTRIBUTE:meta])*
     $PROTOCOL_VISIBILITY:vis struct $PROTOCOL_NAME:ident {
-      $( // FOREACH $FIELD
-        $( #[$FIELD_ATTRIBUTE:meta] )*
-        $FIELD_VIS:vis $FIELD_NAME:ident:
-          $( #[todo$($FIELD_TODO:tt)?] )?
-          $( $FIELD_TYPE:ty )?
-          $({ // IF $FUNCTION
-            #[function($FUNCTION_VERSION:literal, $FUNCTION_SECTION:literal)]
+      $(
+        $(#[$FIELD_ATTRIBUTE:meta])*
+        $FIELD_VISIBILITY:vis $FIELD_NAME:ident
+          $(:#[todo$($FIELD_TODO:tt)?])?
+          $(:#[pointer] $FIELD_POINTER:ty)?
+          $(:$FIELD_TYPE:ty)?
+          $(:{
+            #[version($($FUNCTION_VERSION:literal),+)]
             $( #[$FUNCTION_ATTRIBUTE:meta] )*
             $FUNCTION_VISIBILITY:vis fn $FUNCTION_NAME:ident(
-              $( &$PARAMETER_SELF:ident )? $(,)?
-              $( $(#[in])? $(#[out])? $(#[optional])?
+              $(&$PARAMETER_SELF:ident)? $(,)?
+              $($(#[in])? $(#[out])? $(#[optional])?
                 $PARAMETER_NAME:ident: $PARAMETER_TYPE:ty
               ),* $(,)?
-            ) $( -> $FUNCTION_RETURN:ty )?
-          })? // ENDIF $FUNCTION
-      ),* $(,)? // ENDFOREACH $FIELD
+            ) $(-> $FUNCTION_RETURN:ty)?
+          })?
+      ),* $(,)?
     }
   ) => {
-    $GUID_VISIBILITY const $GUID_NAME: EFI_GUID = EFI_GUID {
-      Data1: $GUID_DATA_1, Data2: $GUID_DATA_2, Data3: $GUID_DATA_3,
-      Data4: [ $($GUID_DATA_4),* ],
-    };
+    $(
+      $GUID_VISIBILITY const $GUID_NAME: EFI_GUID = EFI_GUID {
+        Data1: $GUID_DATA_1, Data2: $GUID_DATA_2, Data3: $GUID_DATA_3,
+        Data4: [ $($GUID_DATA_4),* ],
+      };
+    )?
+
+    // NOTE:
+    // The metavariable `$FUNCTION_NAME` is an `ident` and cannot be passed
+    // to `uefi_struct!{}`, which only accepts `$FIELD_TYPE:ty`. We therefore
+    // copy the struct declaration here...
 
     #[repr(C)]
-    $( #[$PROTOCOL_ATTRIBUTE] )*
+    $(#[$PROTOCOL_ATTRIBUTE])*
     #[doc = ""]
-    #[doc = uefi_version!($PROTOCOL_VERSION, $PROTOCOL_SECTION)]
+    #[doc = uefi_version!($($PROTOCOL_VERSION),+)]
     #[allow(non_snake_case)]
     #[allow(non_camel_case_types)]
     $PROTOCOL_VISIBILITY struct $PROTOCOL_NAME {
-      $( // FOREACH $FIELD
-        $( #[$FIELD_ATTRIBUTE] )*
-        $FIELD_VIS $FIELD_NAME:
-          $( *const ($($FIELD_TODO)?) )?
-          $( $FUNCTION_NAME )?
-          $( $FIELD_TYPE )?,
-      )* // ENDFOREACH $FIELD
+      $(
+        $(#[$FIELD_ATTRIBUTE])*
+        $FIELD_VISIBILITY $FIELD_NAME:
+          $(*const ($($FIELD_TODO)?))?
+          $(*const $FIELD_POINTER)?
+          $($FUNCTION_NAME)?
+          $($FIELD_TYPE)?
+      ),*
     }
 
-    $( // FOREACH $FIELD
-      $( // IF $FUNCTION
-        $( #[$FUNCTION_ATTRIBUTE] )*
+    $(
+      $(
+        $(#[$FUNCTION_ATTRIBUTE])*
         #[allow(non_snake_case)]
         #[allow(non_camel_case_types)]
         #[doc = ""]
-        #[doc = uefi_version!($FUNCTION_VERSION, $FUNCTION_SECTION)]
+        #[doc = uefi_version!($($FUNCTION_VERSION),+)]
         $FUNCTION_VISIBILITY type $FUNCTION_NAME =
           unsafe extern "efiapi" fn(
-            $( $PARAMETER_SELF: *const $PROTOCOL_NAME, )?
-            $( $PARAMETER_NAME: $PARAMETER_TYPE, )*
-          ) $( -> $FUNCTION_RETURN )?;
-      )? // ENDIF $FUNCTION
-    )* // ENDFOREACH $FIELD
+            $($PARAMETER_SELF: *const $PROTOCOL_NAME,)?
+            $($PARAMETER_NAME: $PARAMETER_TYPE),*
+          ) $(-> $FUNCTION_RETURN)?;
+      )?
+    )*
 
     impl $PROTOCOL_NAME {
-      $( // FOREACH $FIELD
-        $( // IF $FUNCTION
-          $( #[$FUNCTION_ATTRIBUTE] )*
+      $(
+        $(
+          $(#[$FUNCTION_ATTRIBUTE])*
           #[allow(non_snake_case)]
           #[doc = ""]
-          #[doc = uefi_version!($FUNCTION_VERSION, $FUNCTION_SECTION)]
+          #[doc = uefi_version!($($FUNCTION_VERSION),+)]
           $FUNCTION_VISIBILITY fn $FIELD_NAME(
-            &self,
-            $( $PARAMETER_NAME: $PARAMETER_TYPE ),*
-          ) $( -> $FUNCTION_RETURN )? {
+            &self, $($PARAMETER_NAME: $PARAMETER_TYPE),*
+          ) $(-> $FUNCTION_RETURN)? {
             unsafe {
               (self.$FIELD_NAME)(
-                $( { let $PARAMETER_SELF = self; $PARAMETER_SELF }, )?
-                $( $PARAMETER_NAME ),*
+                $({ let $PARAMETER_SELF = self; $PARAMETER_SELF },)?
+                $($PARAMETER_NAME),*
               )
             }
           }
-        )? // ENDIF $FUNCTION
-      )* // ENDFOREACH $FIELD
+        )?
+
+        uefi_struct! {
+          @fn #[pointer]
+          $(#[$FIELD_ATTRIBUTE])*
+          $FIELD_VISIBILITY $FIELD_NAME() -> $($FIELD_POINTER)?;
+        }
+      )*
     }
   };
 }
 
 #[allow(non_camel_case_types)]
-type TR_TODO_FUNCTION_POINTER = *const ();
+pub type TR_TODO_FUNCTION_POINTER = *const ();
 
 #[allow(non_camel_case_types)]
-type EFI_STATUS = usize;
+pub type EFI_STATUS = usize;
 
 // typedef VOID* EFI_EVENT;
-type EFI_EVENT = *const core::ffi::c_void;
+#[allow(non_camel_case_types)]
+pub type EFI_EVENT = *const core::ffi::c_void;
 
 type BOOLEAN = bool;
 
@@ -259,7 +250,7 @@ uefi_protocol! {
       { 0x8E, 0x39, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B }
   }
 
-  #[protocol(2.11, "12.3.1")]
+  #[version(2.11, "12.3.1")]
   /// This protocol is used to obtain input from the *ConsoleIn* device.
   ///
   /// The `EFI_SIMPLE_TEXT_INPUT_PROTOCOL` is used on the *ConsoleIn* device. It
@@ -269,7 +260,7 @@ uefi_protocol! {
   pub struct EFI_SIMPLE_TEXT_INPUT_PROTOCOL {
     /// Reset the *ConsoleIn* device.
     Reset: {
-      #[function(2.11, "12.3.2")]
+      #[version(2.11, "12.3.2")]
       /// Resets the input device hardware.
       ///
       /// The implementation of `Reset` is required to clear the contents of any
@@ -305,7 +296,7 @@ uefi_protocol! {
 
     /// Returns the next input character.
     ReadKeyStroke: {
-      #[function(2.11, "12.3.3")]
+      #[version(2.11, "12.3.3")]
       /// Reads the next keystroke from the input device.
       ///
       /// The `ReadKeyStroke()` function reads the next keystroke from the input
@@ -349,7 +340,7 @@ uefi_protocol! {
       { 0x8E, 0x39, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3b }
   }
 
-  #[protocol(2.11, "12.4.1")]
+  #[version(2.11, "12.4.1")]
   /// This protocol is used to control text-based output devices.
   ///
   /// The *Simple Text Output protocol* defines the minimum requirements for a
@@ -362,7 +353,7 @@ uefi_protocol! {
 
     /// Displays the string on the device at the current cursor location.
     OutputString: {
-      #[function(2.11, "12.4.3")]
+      #[version(2.11, "12.4.3")]
       /// Writes a string to the output device.
       ///
       /// The `OutputString()` function writes a string to the output device.
@@ -408,7 +399,7 @@ uefi_protocol! {
 
     /// Clears the screen with the currently set background color.
     ClearScreen: {
-      #[function(2.11, "12.4.8")]
+      #[version(2.11, "12.4.8")]
       /// Clears the output device(s) display to the currently selected
       /// background color.
       ///
@@ -435,9 +426,33 @@ uefi_protocol! {
     /// Turns the visibility of the cursor on/off.
     EnableCursor: #[todo],
 
-    /// Pointer to `SIMPLE_TEXT_OUTPUT_MODE` data.
-    Mode: #[todo],
+    /// Pointer to `EFI_SIMPLE_TEXT_OUTPUT_MODE` data.
+    pub Mode: #[pointer] EFI_SIMPLE_TEXT_OUTPUT_MODE,
   }
+}
+
+///  @par Data Structure Description:
+///  Mode Structure pointed to by Simple Text Out protocol.
+#[repr(C)]
+#[allow(nonstandard_style)]
+#[derive(Debug)]
+pub struct EFI_SIMPLE_TEXT_OUTPUT_MODE {
+  /// The number of modes supported by QueryMode () and SetMode ().
+  MaxMode: i32,
+
+  /// The text mode of the output device(s).
+  Mode: i32,
+
+  /// The current character output attribute.
+  Attribute: i32,
+
+  /// The cursor's column.
+  CursorColumn: i32,
+
+  /// The cursor's row.
+  CursorRow: i32,
+  /// The cursor is currently visible or not.
+  CursorVisible: BOOLEAN,
 }
 
 uefi_struct! {
@@ -486,6 +501,8 @@ pub extern "efiapi" fn efi_main(
   let string_arr =
     ['h' as u16, 'I' as u16, '!' as u16, '\n' as u16, '\0' as u16];
   stdout.OutputString(string_arr.as_ptr());
+
+  let _mode = stdout.Mode();
 
   unsafe {
     let mut key = EFI_INPUT_KEY::default();
