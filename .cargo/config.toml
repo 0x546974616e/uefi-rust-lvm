@@ -1,5 +1,10 @@
-[build]
-target = "x86_64-unknown-uefi"
+[target.x86_64-unknown-uefi]
+runner = "cargo run --features run -p uefi-runner --"
 
 [alias]
-f = "fmt"
+uc = "uefi-check"
+ub = "uefi-build"
+ur = "uefi-run-app"
+uefi-check = "check --features uefi --target x86_64-unknown-uefi"
+uefi-build = "build --features uefi --target x86_64-unknown-uefi"
+uefi-run-app = "run --features uefi --target x86_64-unknown-uefi -p uefi-app"

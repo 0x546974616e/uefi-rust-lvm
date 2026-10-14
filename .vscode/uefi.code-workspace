@@ -1,9 +1,13 @@
 {
   "folders": [
-    { "path": ".." },
+    {
+      "path": "..",
+      "name": "UEFI (Rust)",
+    },
   ],
 
   "settings": {
+    "rust-analyzer.cargo.features": "all",
     "files.associations": {
       "rust-toolchain": "ini",
       "*.toml": "ini"

@@ -6,6 +6,10 @@ edition = "2024"
 [[bin]]
 name = "BOOTx64"
 path = "sources/main.rs"
+required-features = [ "uefi" ]
 
 [dependencies]
 uefi-raw = { workspace = true }
+
+[features]
+uefi = []

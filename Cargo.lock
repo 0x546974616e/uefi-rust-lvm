@@ -12,3 +12,7 @@ dependencies = [
 [[package]]
 name = "uefi-raw"
 version = "0.1.0"
+
+[[package]]
+name = "uefi-runner"
+version = "0.1.0"
