@@ -6,21 +6,45 @@
 #[macro_export]
 macro_rules! uefi_version {
   ($VERSION:literal) => {
-    concat!(
-      "-- <i>UEFI Specification, Release ",
-      stringify!($VERSION),
-      ".</i>"
-    )
+    concat!("-- <i>UEFI Specification, Release ", $VERSION, ".</i>")
   };
 
   ($VERSION:literal, $SECTION:literal) => {
     concat!(
       "-- <i>UEFI Specification, Release ",
-      stringify!($VERSION),
+      $VERSION,
       ", Section ",
       $SECTION,
       ".</i>"
     )
+  };
+}
+
+#[macro_export]
+macro_rules! uefi_enum {
+  (
+    #[version($($ENUM_VERSION:literal),+)]
+    $(#[$ENUM_ATTRIBUTE:meta])*
+    $ENUM_VISIBILITY:vis enum $ENUM_NAME:ident {
+      $(
+        $(#[$VARIANT_ATTRIBUTE:meta])*
+        $VARIANT_NAME:ident $(= $VARIANT_VALUE:literal)?
+      ),* $(,)?
+    }
+  ) => {
+    #[repr(C)]
+    #[derive(Debug)]
+    $(#[$ENUM_ATTRIBUTE])*
+    #[allow(non_camel_case_types)]
+    #[allow(non_snake_case)]
+    #[doc = ""]
+    #[doc = $crate::uefi_version!($($ENUM_VERSION),+)]
+    $ENUM_VISIBILITY enum $ENUM_NAME {
+      $(
+        $(#[$VARIANT_ATTRIBUTE])*
+        $VARIANT_NAME $(= $VARIANT_VALUE)?
+      ),*
+    }
   };
 }
 
@@ -31,6 +55,7 @@ macro_rules! uefi_struct {
   (@type $TYPE:ty) => { $TYPE };
 
   (
+    #[version($($STRUCT_VERSION:literal),+)]
     $(#[$STRUCT_ATTRIBUTE:meta])*
     $STRUCT_VISIBILITY:vis struct $STRUCT_NAME:ident {
       $(
@@ -46,6 +71,8 @@ macro_rules! uefi_struct {
     $(#[$STRUCT_ATTRIBUTE])*
     #[allow(non_camel_case_types)]
     #[allow(non_snake_case)]
+    #[doc = ""]
+    #[doc = $crate::uefi_version!($($STRUCT_VERSION),+)]
     $STRUCT_VISIBILITY struct $STRUCT_NAME {
       $(
         $(#[$FIELD_ATTRIBUTE])*
@@ -111,7 +138,7 @@ macro_rules! uefi_protocol {
             $( #[$FUNCTION_ATTRIBUTE:meta] )*
             $FUNCTION_VISIBILITY:vis fn $FUNCTION_NAME:ident(
               $(&$PARAMETER_SELF:ident)? $(,)?
-              $($(#[in])? $(#[out])? $(#[optional])?
+              $( $(#[$(in $(,)?)? $(out $(,)?)? $(optional)?])?
                 $PARAMETER_NAME:ident: $PARAMETER_TYPE:ty
               ),* $(,)?
             ) $(-> $FUNCTION_RETURN:ty)?
@@ -134,10 +161,10 @@ macro_rules! uefi_protocol {
     #[repr(C)]
     #[derive(Debug)]
     $(#[$PROTOCOL_ATTRIBUTE])*
-    #[doc = ""]
-    #[doc = $crate::uefi_version!($($PROTOCOL_VERSION),+)]
     #[allow(non_snake_case)]
     #[allow(non_camel_case_types)]
+    #[doc = ""]
+    #[doc = $crate::uefi_version!($($PROTOCOL_VERSION),+)]
     $PROTOCOL_VISIBILITY struct $PROTOCOL_NAME {
       $(
         $(#[$FIELD_ATTRIBUTE])*

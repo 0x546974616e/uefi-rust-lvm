@@ -1,5 +1,5 @@
 #![allow(clippy::doc_overindented_list_items)]
-use super::{structs::*, types::*};
+use super::{status::*, structs::*, types::*};
 
 uefi_protocol! {
   #[guid]
@@ -60,7 +60,7 @@ uefi_protocol! {
       /// The `ReadKeyStroke()` function reads the next keystroke from the input
       /// device. If there is no pending keystroke the function returns
       /// `EFI_NOT_READY`. If there is a pending keystroke, then `ScanCode` is
-      /// the EFI scan code defined in [EFI Scan Codes][#]. The `UnicodeChar` is
+      /// the EFI scan code defined in [EFI Scan Codes](#). The `UnicodeChar` is
       /// the actual printable character or is zero if the key does not
       /// represent a printable character (control key, function key, etc.).
       ///
@@ -116,7 +116,7 @@ uefi_protocol! {
       /// This is the most basic output mechanism on an output device. The
       /// String is displayed at the current cursor location on the output
       /// device(s) and the cursor is advanced according to the rules listed in
-      /// [EFI Cursor Location/Advance Rules][#].
+      /// [EFI Cursor Location/Advance Rules](#).
       ///
       /// # Parameters
       ///
@@ -173,7 +173,7 @@ uefi_protocol! {
       /// * `EFI_DEVICE_ERROR` - The device had an error and could not complete
       ///                        the request.
       /// * `EFI_UNSUPPORTED`  - The output device is not in a valid text mode.
-      pub fn ClearScreen(&This) -> EFI_STATUS
+      pub fn EFI_TEXT_CLEAR_SCREEN(&This) -> EFI_STATUS
     },
 
     /// Sets the current cursor position.

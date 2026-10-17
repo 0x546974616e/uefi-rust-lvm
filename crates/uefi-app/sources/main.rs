@@ -36,15 +36,15 @@ use uefi_raw::*;
 #[unsafe(export_name = "efi_main")]
 pub extern "efiapi" fn efi_main(
   handle: TodoImageHandle,
-  system_table: *mut SystemTable,
+  system_table: *mut EFI_SYSTEM_TABLE,
 ) -> Status {
   let gST = unsafe { system_table.as_ref_unchecked() };
-  let stdout = gST.output();
+  let stdout = gST.ConOut();
   unsafe { stdout.ClearScreen() };
 
   let string = "hellO\n\r";
   for character in string.chars() {
-    let mut buffer: [u16; 1] = [0];
+    let mut buffer: [u16; 2] = [0, 0];
     let utf16 = character.encode_utf16(&mut buffer);
     unsafe { stdout.OutputString(utf16.as_ptr()) };
   }
@@ -58,13 +58,22 @@ pub extern "efiapi" fn efi_main(
   unsafe {
     let mut key = EFI_INPUT_KEY::default();
     loop {
-      let status = gST.input().ReadKeyStroke(&mut key);
-      if status == 0 {
+      let status = gST.ConIn().ReadKeyStroke(&mut key);
+      if status == EFI_SUCCESS {
         break;
       }
     }
   };
 
+  unsafe {
+    gST.RuntimeServices().ResetSystem(
+      EFI_RESET_TYPE::EfiResetShutdown,
+      EFI_SUCCESS,
+      0,
+      NULL,
+    )
+  };
+  // gRT->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
   // loop{}
   0
 }

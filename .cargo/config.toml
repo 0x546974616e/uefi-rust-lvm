@@ -2,6 +2,9 @@
 runner = "cargo run --features run -p uefi-runner --"
 
 [alias]
+da = "doc-all"
+doc-all = "doc --document-private-items"
+
 uc = "uefi-check"
 ub = "uefi-build"
 ur = "uefi-run-app"
