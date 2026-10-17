@@ -147,7 +147,7 @@ macro_rules! uefi_protocol {
     }
   ) => {
     $(
-      $GUID_VISIBILITY const $GUID_NAME: EFI_GUID = EFI_GUID {
+      $GUID_VISIBILITY const $GUID_NAME: $crate::EFI_GUID = $crate::EFI_GUID {
         Data1: $GUID_DATA_1, Data2: $GUID_DATA_2, Data3: $GUID_DATA_3,
         Data4: [ $($GUID_DATA_4),* ],
       };
@@ -198,6 +198,7 @@ macro_rules! uefi_protocol {
           #[allow(non_snake_case)]
           #[doc = ""]
           #[doc = $crate::uefi_version!($($FUNCTION_VERSION),+)]
+          #[allow(clippy::missing_safety_doc)]
           $FUNCTION_VISIBILITY unsafe fn $FIELD_NAME(
             &self, $($PARAMETER_NAME: $PARAMETER_TYPE),*
           ) $(-> $FUNCTION_RETURN)? {

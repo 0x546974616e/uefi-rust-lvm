@@ -1,47 +1,39 @@
 use crate::*;
 
-///  @par Data Structure Description:
-///  Mode Structure pointed to by Simple Text Out protocol.
-#[repr(C)]
-#[allow(nonstandard_style)]
-#[derive(Debug)]
-pub struct EFI_SIMPLE_TEXT_OUTPUT_MODE {
-  /// The number of modes supported by QueryMode () and SetMode ().
-  MaxMode: i32,
+uefi_struct! {
+  #[version(2.11, "12.4.1")]
+  /// Mode structure pointed to by `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL`.
+  pub struct EFI_SIMPLE_TEXT_OUTPUT_MODE {
+    /// The number of modes supported by `QueryMode()` and `SetMode()`.
+    MaxMode: i32,
 
-  /// The text mode of the output device(s).
-  Mode: i32,
+    /// The text mode of the output device(s).
+    Mode: i32,
 
-  /// The current character output attribute.
-  Attribute: i32,
+    /// The current character output attribute.
+    Attribute: i32,
 
-  /// The cursor's column.
-  CursorColumn: i32,
+    /// The cursor's column.
+    CursorColumn: i32,
 
-  /// The cursor's row.
-  CursorRow: i32,
+    /// The cursor's row.
+    CursorRow: i32,
 
-  /// The cursor is currently visible or not.
-  CursorVisible: BOOLEAN,
-}
-
-#[repr(C)]
-#[derive(Default)]
-pub struct EFI_INPUT_KEY {
-  ScanCode: u16,    // UINT16;
-  UnicodeChar: u16, // CHAR16;
+    /// The cursor is currently visible or not.
+    CursorVisible: BOOLEAN,
+  }
 }
 
 uefi_struct! {
-  #[version(2.11, "2.3.1")]
-  /// 128-bit buffer containing a unique identifier value.
-  ///
-  /// Unless otherwise specified, aligned on a 64-bit boundary.
-  pub struct EFI_GUID {
-    pub Data1: u32,
-    pub Data2: u16,
-    pub Data3: u16,
-    pub Data4: [u8; 8],
+  #[version(2.11, "12.3.3")]
+  /// The keystroke information for the key that was pressed.
+  #[derive(Default)]
+  pub struct EFI_INPUT_KEY {
+    /// The scan code of the key, used to identify non-printable keys.
+    ScanCode: u16,
+
+    /// The Unicode character associated with the key, if applicable.
+    UnicodeChar: CHAR16,
   }
 }
 
@@ -145,7 +137,7 @@ uefi_struct! {
 
     /// A pointer to the `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL` interface that is
     /// associated with `ConsoleOutHandle`.
-    ConOut: #[pointer] pub EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    pub ConOut: #[pointer] pub EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
 
     /// The handle for the active standard error console device. This handle
     /// must support the `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL`. If there is no
@@ -154,7 +146,7 @@ uefi_struct! {
 
     /// A pointer to the `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL` interface that is
     /// associated with `StandardErrorHandle`.
-    StdErr: #[pointer] pub EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    pub StdErr: #[pointer] pub EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
 
     /// A pointer to the *EFI Runtime Services Table*.
     RuntimeServices: #[pointer] pub EFI_RUNTIME_SERVICES,

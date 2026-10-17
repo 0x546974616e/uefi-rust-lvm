@@ -84,7 +84,8 @@ impl EFI_STATUS {
   /// # Example
   ///
   /// ```rust,no_run
-  /// # let system_table: uefi_raw::EFI_SYSTEM_TABLE = unimplemented!();
+  /// # use uefi_raw::EFI_SYSTEM_TABLE;
+  /// # let system_table: EFI_SYSTEM_TABLE = unimplemented!();
   /// let status = unsafe { system_table.ConOut().ClearScreen() };
   /// if status.is_error() {
   ///   // Handle the error.
@@ -111,19 +112,19 @@ macro_rules! uefi_status {
         $(EFI_STATUS($VARIANT_LITERAL);)?
     )*
 
-    /// Formats the status using its constant name and numeric value.
-    ///
-    /// For known error statuses, the high bit is removed from the displayed
-    /// value. All other status values are displayed unchanged.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use uefi_raw::{EFI_SUCCESS, EFI_NOT_READY};
-    /// assert_eq!(format!("{EFI_SUCCESS:?}"), "EFI_SUCCESS(0)");
-    /// assert_eq!(format!("{EFI_NOT_READY:?}"), "EFI_NOT_READY(6)");
-    /// ```
     impl fmt::Debug for EFI_STATUS {
+      /// Formats the status using its constant name and numeric value.
+      ///
+      /// For known error statuses, the high bit is removed from the displayed
+      /// value. All other status values are displayed unchanged.
+      ///
+      /// # Example
+      ///
+      /// ```rust
+      /// # use uefi_raw::{EFI_SUCCESS, EFI_NOT_READY};
+      /// assert_eq!(format!("{EFI_SUCCESS:?}"), "EFI_SUCCESS(0)");
+      /// assert_eq!(format!("{EFI_NOT_READY:?}"), "EFI_NOT_READY(6)");
+      /// ```
       fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (variant, value) = match self.0 {
           $(x if x == $VARIANT_NAME.0 => (stringify!($VARIANT_NAME),
@@ -134,20 +135,20 @@ macro_rules! uefi_status {
       }
     }
 
-    /// Formats the status using its human-readable description.
-    ///
-    /// Unknown status values are formatted as `EFI_STATUS(value)`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use uefi_raw::EFI_UNSUPPORTED;
-    /// assert_eq!(
-    ///   format!("{EFI_UNSUPPORTED}"),
-    ///   "The operation is not supported (EFI_UNSUPPORTED)"
-    /// );
-    /// ```
     impl fmt::Display for EFI_STATUS {
+      /// Formats the status using its human-readable description.
+      ///
+      /// Unknown status values are formatted as `EFI_STATUS(value)`.
+      ///
+      /// # Example
+      ///
+      /// ```rust
+      /// # use uefi_raw::EFI_UNSUPPORTED;
+      /// assert_eq!(
+      ///   format!("{EFI_UNSUPPORTED}"),
+      ///   "The operation is not supported (EFI_UNSUPPORTED)"
+      /// );
+      /// ```
       fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (variant, reason) = match self.0 {
           $(x if x == $VARIANT_NAME.0 => (stringify!($VARIANT_NAME),

@@ -1,0 +1,11 @@
+[package]
+name = "uefi-print"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "uefi_print"
+path = "sources/library.rs"
+
+[dependencies]
+uefi-raw = { workspace = true }

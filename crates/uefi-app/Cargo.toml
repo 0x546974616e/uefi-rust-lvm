@@ -9,6 +9,7 @@ path = "sources/main.rs"
 required-features = [ "uefi" ]
 
 [dependencies]
+uefi-print = { workspace = true }
 uefi-raw = { workspace = true }
 
 [features]

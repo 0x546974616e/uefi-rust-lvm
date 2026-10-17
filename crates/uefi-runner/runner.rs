@@ -54,6 +54,7 @@ fn prepare_esp_directory(efi_binary: &Path) -> io::Result<PathBuf> {
 fn run_qemu(esp_directory: &Path) -> io::Result<ExitStatus> {
   // TODO: Escape comma with `,,` in QEMU path.
   // TODO(?): QEMU `-blockdev` ? `-device` ?
+  // TODO(?): -serial stdio
   Command::new(env!("QEMU"))
     .stdout(Stdio::inherit())
     .stderr(Stdio::inherit())

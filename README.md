@@ -28,17 +28,13 @@ The project uses `nightly` for code formatting.
 
 - https://doc.rust-lang.org/unstable-book/language-features/lang-items.html
 - https://doc.rust-lang.org/nightly/core/attribute.no_std.html
-- `macro_rules!` struct
-- `cargo run`
-
-
 - `-Z build-std-features=compiler-builtins-mem` ?
 
   ```ini
   [unstable]
-  build-std-features = [“compiler-builtins-mem”]
-  build-std = [“core”, “compiler_builtins”]
+  build-std-features = ["compiler-builtins-mem"]
+  build-std = ["core", "compiler_builtins"]
 
   [build]
-  target = “x86_64-unknown-uefi”
+  target = "x86_64-unknown-uefi"
   ```

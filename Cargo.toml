@@ -4,4 +4,10 @@ members = [ "crates/*" ]
 
 [workspace.dependencies]
 uefi-app = { path = "crates/uefi-app" }
+uefi-print = { path = "crates/uefi-print" }
 uefi-raw = { path = "crates/uefi-raw" }
+
+[profile.dev]
+panic = "abort"
+[profile.release]
+panic = "abort"

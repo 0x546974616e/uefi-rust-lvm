@@ -6,6 +6,14 @@ version = 4
 name = "uefi-app"
 version = "0.1.0"
 dependencies = [
+ "uefi-print",
+ "uefi-raw",
+]
+
+[[package]]
+name = "uefi-print"
+version = "0.1.0"
+dependencies = [
  "uefi-raw",
 ]
 
