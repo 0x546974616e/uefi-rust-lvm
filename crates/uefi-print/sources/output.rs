@@ -28,8 +28,8 @@ const BUFFER_SIZE: usize = 256;
 
 /// Buffered writer for the `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL`.
 ///
-/// Text is buffered until the buffer is full or [`Output::flush()`] is called.
-/// The buffer has a fixed capacity and does not allocate memory.
+/// Text is buffered until the buffer is full or [`BufferedOutput::flush()`] is
+/// called. The buffer has a fixed capacity and does not allocate memory.
 pub struct BufferedOutput<'st> {
   protocol: &'st EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
   buffer: [CHAR16; BUFFER_SIZE],
@@ -48,7 +48,10 @@ impl<'st> BufferedOutput<'st> {
   /// Appends one character, replacing non-BMP characters with `?`.
   pub fn push_char(&mut self, mut character: char) -> fmt::Result {
     // UEFI text output traditionally uses UCS-2, which cannot represent
-    // characters outside the Basic Multilingual Plane.
+    // characters outside the Basic Multilingual Plane (BMP), i.e., characters
+    // above U+FFFF. Supplementary characters belong to the Supplementary Planes
+    // and require surrogate pairs in UTF-16. Such characters are therefore
+    // replaced with a question mark. (See 2.11 - 33.2.6 Strings for more.)
     if character as u32 > CHAR16::MAX as u32 {
       character = '?';
     }
@@ -58,7 +61,6 @@ impl<'st> BufferedOutput<'st> {
       self.flush()?;
     }
 
-    // The position invariant is always maintained, but better safe than sorry.
     *self.buffer.get_mut(self.position).ok_or(fmt::Error)? =
       character as CHAR16;
     self.position += 1;
@@ -68,15 +70,17 @@ impl<'st> BufferedOutput<'st> {
   /// Writes the buffered text to the firmware.
   ///
   /// Does nothing if the buffer is empty. Otherwise, appends a `NUL` terminator
-  /// and passes the buffer to `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL::OutputString`.
+  /// and passes the buffer to `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL.OutputString()`.
   /// The buffer is cleared only if the firmware call succeeds.
   pub fn flush(&mut self) -> fmt::Result {
     if self.position == 0usize {
       return Ok(());
     }
 
+    // Check the buffer bounds defensively before writing.
     *self.buffer.get_mut(self.position).ok_or(fmt::Error)? = 0x0000u16;
-    // SAFETY: The buffer is valid, NUL-terminated and will remain alive.
+
+    // SAFETY: The buffer is valid, NUL-terminated and remains alive.
     if unsafe { self.protocol.OutputString(self.buffer.as_ptr()) }.is_error() {
       return Err(fmt::Error);
     }
@@ -89,10 +93,10 @@ impl<'st> BufferedOutput<'st> {
 impl<'st> fmt::Write for BufferedOutput<'st> {
   /// Appends a character to the buffer.
   ///
-  /// Embedded `NUL` characters are ignored and line feeds (`\n`) are translated
+  /// Embedded `\0` characters are ignored and line feeds (`\n`) are translated
   /// to CRLF (`\r\n`). BMP characters are emitted directly, while non-BMP
   /// characters are replaced with `?` rather than encoded as UTF-16 surrogate
-  /// pairs.
+  /// pairs (strings in the UEFI environment are defined using UCS-2).
   fn write_char(&mut self, character: char) -> fmt::Result {
     match character {
       '\0' => Ok(()),
@@ -100,7 +104,7 @@ impl<'st> fmt::Write for BufferedOutput<'st> {
         self.push_char('\r')?;
         self.push_char('\n')
       }
-      character => self.push_char(character),
+      x => self.push_char(x),
     }
   }
 

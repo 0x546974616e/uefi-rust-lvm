@@ -18,21 +18,18 @@ use core::fmt;
 #[doc = ""]
 #[doc = crate::uefi_version!(2.11, "D")]
 #[repr(transparent)]
-#[allow(non_camel_case_types)]
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct EFI_STATUS(pub usize);
 
 impl EFI_STATUS {
   /// The highest bit of the status value, used to identify errors.
-  const MAX_BIT: usize = 1 << (<usize>::BITS - 1);
+  const MAX_BIT: usize = 1 << (usize::BITS - 1);
 
-  #[allow(non_snake_case)]
   /// Creates an error status (high bit set).
   const fn Error(value: usize) -> EFI_STATUS {
     EFI_STATUS(Self::MAX_BIT | value)
   }
 
-  #[allow(non_snake_case)]
   /// Creates a warning status (high bit clear).
   const fn Warning(value: usize) -> EFI_STATUS {
     EFI_STATUS(value)
