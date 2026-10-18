@@ -1,4 +1,4 @@
-use crate::{EFI_STATUS, EFI_TABLE_HEADER, VOID};
+use crate::{EFI_STATUS, EFI_TABLE_HEADER, UINTN, VOID};
 
 uefi_enum! {
   #[version(2.11, "8.5.1.1")]
@@ -70,7 +70,7 @@ uefi_function! {
   pub fn EFI_RESET_SYSTEM for EFI_RUNTIME_SERVICES::ResetSystem(
     #[in] ResetType: EFI_RESET_TYPE,
     #[in] ResetStatus: EFI_STATUS,
-    #[in] DataSize: usize,
+    #[in] DataSize: UINTN,
     #[in(optional)] ResetData: *const VOID,
   );
 }

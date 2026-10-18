@@ -1,4 +1,4 @@
-use crate::{EFI_EVENT, EFI_STATUS, EFI_TABLE_HEADER, UINTN, VOID};
+use crate::{EFI_EVENT, EFI_GUID, EFI_HANDLE, EFI_STATUS, EFI_TABLE_HEADER, UINTN, VOID};
 
 uefi_function! {
   #[version(2.11, "7.1.5")]
@@ -50,10 +50,92 @@ uefi_function! {
   /// * `EFI_INVALID_PARAMETER` - The event indicated by `Index` is of
   ///                             type `EVT_NOTIFY_SIGNAL`.
   /// * `EFI_UNSUPPORTED`       - The current TPL is not `TPL_APPLICATION`.
-  pub fn EFI_WAIT_FOR_EVENT for EFI_BOOT_SERVICES::WaitForEvent (
+  pub fn EFI_WAIT_FOR_EVENT for EFI_BOOT_SERVICES::WaitForEvent(
     #[in] NumberOfEvents: UINTN,
     #[in] Event: *const EFI_EVENT,
     #[out] Index: *mut UINTN,
+  ) -> EFI_STATUS;
+}
+
+uefi_enum! {
+  #[version(2.11, "7.3.6")]
+  /// Enumeration of *EFI Locate Search Types*.
+  pub enum EFI_LOCATE_SEARCH_TYPE {
+    /// Retrieve all the handles in the handle database.
+    ///
+    /// In `EFI_LOCATE_HANDLE` and `EFI_LOCATE_HANDLE_BUFFER`, `Protocol` and
+    /// `SearchKey` are ignored and the function returns an array of every
+    /// handle in the system.
+    AllHandles = 0,
+
+    /// Retrieve the next handle fron a `RegisterProtocolNotify()` event.
+    ///
+    /// SearchKey supplies the Registration value returned by
+    /// `EFI_BOOT_SERVICES.RegisterProtocolNotify()`. The function returns the
+    /// next handle that is new for the registration. Only one handle is
+    /// returned at a time, starting with the first, and the caller must loop
+    /// until no more handles are returned. Protocol is ignored for this search
+    /// type.
+    ByRegisterNotify = 1,
+
+    /// Retrieve the set of handles from the handle database that support a
+    /// specified protocol.
+    ///
+    /// All handles that support `Protocol` are returned. `SearchKey` is ignored
+    /// for this search type.
+    ByProtocol = 2,
+  }
+}
+
+uefi_function! {
+  #[version(2.11, "7.3.15")]
+  /// Returns an array of handles that support the requested protocol in a
+  /// buffer allocated from pool.
+  ///
+  /// # Parameters
+  ///
+  /// * `SearchType` - Specifies which handle(s) are to be returned.
+  /// * `Protocol`   - Provides the protocol to search by. This parameter is
+  ///                  only valid for a `SearchType` of `ByProtocol`.
+  /// * `SearchKey`  - Supplies the search key depending on the `SearchType`.
+  /// * `NoHandles`  - The number of handles returned in `Buffer`.
+  /// * `Buffer`     - A pointer to the buffer to return the requested array of
+  ///                  handles that support `Protocol`.
+  ///
+  ///   This buffer is allocated with a call to the Boot Service
+  ///   `EFI_BOOT_SERVICES.AllocatePool()`. It is the caller's responsibility to
+  ///   call the Boot Service `EFI_BOOT_SERVICES.FreePool()` when the caller no
+  ///   longer requires the contents of `Buffer`.
+  ///
+  /// # Description
+  ///
+  /// The `LocateHandleBuffer()` function returns one or more handles that match
+  /// the `SearchType` request. `Buffer` is allocated from pool, and the number
+  /// of entries in `Buffer` is returned in `NoHandles`. Each `SearchType` is
+  /// described in [`EFI_LOCATE_SEARCH_TYPE`].
+  ///
+  /// If `NoHandles` or `Buffer` is `NULL`, then `EFI_INVALID_PARAMETER` is
+  /// returned.  If there are no handles in the handle database that match the
+  /// search criteria, then `EFI_NOT_FOUND` is returned. If there are not
+  /// enough resources available to allocate `Buffer`, then
+  /// `EFI_OUT_OF_RESOURCES` is returned.
+  ///
+  /// # Errors
+  ///
+  /// * `EFI_SUCCESS`           - The array of handles was returned in `Buffer`,
+  ///                             and the number of handles in `Buffer` was
+  ///                             returned in `NoHandles`.
+  /// * `EFI_INVALID_PARAMETER` - `NoHandles` is `NULL`
+  /// * `EFI_INVALID_PARAMETER` - `Buffer` is `NULL`
+  /// * `EFI_NOT_FOUND`         - No handles match the search.
+  /// * `EFI_OUT_OF_RESOURCES`  - There is not enough pool memory to store the
+  ///                             matching results.
+  pub fn EFI_LOCATE_HANDLE_BUFFER for EFI_BOOT_SERVICES::LocateHandleBuffer(
+    #[in] SearchType: EFI_LOCATE_SEARCH_TYPE,
+    #[in(optional)] Protocol: *const EFI_GUID,
+    #[in(optional)] SearchKey: *const VOID,
+    #[out] NoHandles: *mut UINTN,
+    #[out] Buffer: *mut *const EFI_HANDLE,
   ) -> EFI_STATUS;
 }
 
@@ -210,7 +292,7 @@ uefi_struct! {
 
     /// Retrieves the list of handles from the handle database that meet the
     /// search criteria. The return buffer is automatically allocated.
-    LocateHandleBuffer: #[todo], // EFI 1.1+
+    LocateHandleBuffer: #[function] EFI_LOCATE_HANDLE_BUFFER, // EFI 1.1+
 
     /// Finds the first handle in the handle database the supports the requested
     /// protocol.

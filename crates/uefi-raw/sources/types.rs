@@ -2,6 +2,12 @@ use core::{ffi::c_void, ptr};
 
 uefi_type! {
   #[version(2.11, "2.3.1")]
+  /// 4-byte signed value.
+  pub type INT32 = i32;
+}
+
+uefi_type! {
+  #[version(2.11, "2.3.1")]
   /// Unsigned value of native width.
   ///
   /// 4 bytes on supported 32-bit processor instructions, 8 bytes on supported

@@ -21,11 +21,12 @@ mod tables {
 mod protocols {
   pub mod text_input;
   pub mod text_output;
+  pub mod block_io;
 }
 
 pub use {
   guid::*,
-  protocols::{text_input::*, text_output::*},
+  protocols::{text_input::*, text_output::*, block_io::*},
   status::*,
   tables::{boot::*, header::*, runtime::*, system::*},
   types::*,

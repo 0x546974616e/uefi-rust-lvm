@@ -35,17 +35,16 @@ pub unsafe extern "efiapi" fn efi_main(
 
   println!("Hello, World! 😀 = \u{1F600}");
   println!("{EFI_INCOMPATIBLE_VERSION}");
-  let _mode = stdout.Mode();
-  //println!("{mode:#?}");
+  // println!("{:#?}", stdout.Mode());
   println!("{system_table:#X?}");
 
   let mut index = 0usize;
   let mut key = EFI_INPUT_KEY::default();
   let event = system_table.ConIn().WaitForKey;
+  print!("\nPress any key to exit...\n");
+  let status = unsafe { system_table.ConIn().Reset(false) };
   let status = unsafe { boot_services.WaitForEvent(1, &event, &mut index) };
   let status = unsafe { system_table.ConIn().ReadKeyStroke(&mut key) };
-
-  // TODO: gBS->Stall();
 
   unsafe {
     system_table.RuntimeServices().ResetSystem(

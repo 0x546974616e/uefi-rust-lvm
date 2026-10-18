@@ -10,6 +10,15 @@ uefi_function! {
   #[version(2.11, "12.3.2")]
   /// Resets the input device hardware.
   ///
+  /// # Parameters
+  ///
+  /// * `This`                 - Protocol instance pointer.
+  /// * `ExtendedVerification` - Indicates that the driver may perform a more
+  ///                            exhaustive verification operation of to device
+  ///                            during reset.
+  ///
+  /// # Description
+  ///
   /// The implementation of `Reset` is required to clear the contents of any
   /// input queues resident in memory used for buffering keystroke data and put
   /// the input stream in a known empty state.
@@ -22,13 +31,6 @@ uefi_function! {
   ///
   /// The hardware verification process is not defined by this specification and
   /// is left up to the platform firmware or driver to implement.
-  ///
-  /// # Parameters
-  ///
-  /// * `This` - Protocol instance pointer.
-  /// * `ExtendedVerification` - Indicates that the driver may perform a more
-  ///                            exhaustive verification operation of to device
-  ///                            during reset.
   ///
   /// # Errors
   ///
@@ -45,18 +47,20 @@ uefi_function! {
   #[version(2.11, "12.3.3")]
   /// Reads the next keystroke from the input device.
   ///
+  /// # Parameters
+  ///
+  /// * `This` - Protocol instance pointer.
+  /// * `Key`  - A pointer to a buffer that is filled in with the keystroke
+  ///            information for the key that was pressed.
+  ///
+  /// # Description
+  ///
   /// The `ReadKeyStroke()` function reads the next keystroke from the input
   /// device. If there is no pending keystroke the function returns
   /// `EFI_NOT_READY`. If there is a pending keystroke, then `ScanCode` is the
   /// EFI scan code defined in [EFI Scan Codes](#). The `UnicodeChar` is the
   /// actual printable character or is zero if the key does not represent a
   /// printable character (control key, function key, etc.).
-  ///
-  /// # Parameters
-  ///
-  /// * `This` - Protocol instance pointer.
-  /// * `Key`  - A pointer to a buffer that is filled in with the keystroke
-  ///            information for the key that was pressed.
   ///
   /// # Errors
   ///

@@ -1,4 +1,4 @@
-use crate::{BOOLEAN, CHAR16, EFI_STATUS};
+use crate::{BOOLEAN, CHAR16, EFI_STATUS, INT32};
 
 // #[guid]
 // pub const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID = {
@@ -11,19 +11,19 @@ uefi_struct! {
   /// Mode structure pointed to by `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL`.
   pub struct EFI_SIMPLE_TEXT_OUTPUT_MODE {
     /// The number of modes supported by `QueryMode()` and `SetMode()`.
-    MaxMode: i32,
+    MaxMode: INT32,
 
     /// The text mode of the output device(s).
-    Mode: i32,
+    Mode: INT32,
 
     /// The current character output attribute.
-    Attribute: i32,
+    Attribute: INT32,
 
     /// The cursor's column.
-    CursorColumn: i32,
+    CursorColumn: INT32,
 
     /// The cursor's row.
-    CursorRow: i32,
+    CursorRow: INT32,
 
     /// The cursor is currently visible or not.
     CursorVisible: BOOLEAN,

@@ -16,7 +16,7 @@ use core::fmt;
 /// bit clear and the next to highest bit set are reserved for use by OEMs.
 /// The Table below lists the status code ranges described above.
 #[doc = ""]
-#[doc = crate::uefi_version!(2.11, "D")]
+#[doc = uefi_version!(2.11, "D")]
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct EFI_STATUS(pub usize);

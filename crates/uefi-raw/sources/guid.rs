@@ -4,7 +4,7 @@ use core::fmt;
 ///
 /// Unless otherwise specified, aligned on a 64-bit boundary.
 #[doc = ""]
-#[doc = crate::uefi_version!(2.11, "2.3.1")]
+#[doc = uefi_version!(2.11, "2.3.1")]
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct EFI_GUID {

@@ -33,6 +33,17 @@ macro_rules! uefi_type {
 /// Therefore, to safely handle unknown values returned by the firmware,
 /// enumerations must be represented using the (transparent) newtype pattern.
 ///
+/// This macro generates a transparent newtype around a `u32`, as specified by
+/// the UEFI Specification (Release 2.11, Section 2.3.1 -- *Data Types*):
+///
+/// - **\<Enumerated Type\>**
+///
+///   Element of a standard ANSI C enum type declaration. Type `INT32` or
+///   `UINT32`. ANSI C does not define the size of sign of an enum so they
+///   should never be used in structures. ANSI C integer promotion rules make
+///   `INT32` or `UINT32` interchangeable when passed as an argument to a
+///   function.
+///
 /// # Example
 ///
 /// ```rust
