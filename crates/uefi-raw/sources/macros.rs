@@ -1,4 +1,11 @@
 #[macro_export]
+macro_rules! uefi_assert {
+  ($EXPRESSION:expr) => {
+    const _: () = ::core::assert!($EXPRESSION);
+  };
+}
+
+#[macro_export]
 macro_rules! uefi_version {
   ($VERSION:literal) => {
     $crate::uefi_version!(@impl "Release " $VERSION)

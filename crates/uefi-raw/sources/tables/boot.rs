@@ -1,4 +1,6 @@
-use crate::{EFI_EVENT, EFI_GUID, EFI_HANDLE, EFI_STATUS, EFI_TABLE_HEADER, UINTN, VOID};
+use crate::{
+  EFI_EVENT, EFI_GUID, EFI_HANDLE, EFI_STATUS, EFI_TABLE_HEADER, UINTN, VOID,
+};
 
 uefi_function! {
   #[version(2.11, "7.1.5")]
