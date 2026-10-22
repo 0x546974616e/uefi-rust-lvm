@@ -3,7 +3,9 @@ runner = "cargo run --features run -p uefi-runner --"
 
 [alias]
 da = "doc-all"
+ca = "clippy-all"
 doc-all = "doc --document-private-items"
+clippy-all = "clippy --all-features"
 
 uc = "uefi-check"
 ub = "uefi-build"

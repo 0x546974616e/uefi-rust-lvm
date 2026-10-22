@@ -36,12 +36,12 @@ impl fmt::Display for Utf8Error {
 ///
 /// ```rust
 /// # use uefi_string::decode_utf8_char;
-/// assert_eq!(decode_utf8_char("😀".as_bytes(), 0), Ok(('😀', 4)));
+/// assert_eq!(decode_utf8_char("😀".as_bytes(), 0), Ok('😀'));
 /// ```
 pub const fn decode_utf8_char(
   bytes: &[u8],
   position: usize,
-) -> Utf8Result<(char, usize)> {
+) -> Utf8Result<char> {
   if bytes.len() < position + 1 {
     return Err(Utf8Error::EmptyInput);
   }
@@ -53,7 +53,7 @@ pub const fn decode_utf8_char(
   //  0x00..0x7F
   let c0 = bytes[position] as u32;
   if c0 <= 0x7F {
-    return Ok((unsafe { char::from_u32_unchecked(c0) }, 1));
+    return Ok(unsafe { char::from_u32_unchecked(c0) });
   }
 
   // 2-byte UTF-8: U+0080-U+07FF
@@ -86,10 +86,9 @@ pub const fn decode_utf8_char(
     // ├──────────┼──────────┼──────────┼──────────┤
     // │ ........ │ ........ │ .....XXX │ xxyyyyyy │
     // └──────────┴──────────┴──────────┴──────────┘
-    return Ok((
-      unsafe { char::from_u32_unchecked(((c0 & 0x1F) << 6) | (c1 & 0x3F)) },
-      2,
-    ));
+    return Ok(unsafe {
+      char::from_u32_unchecked(((c0 & 0x1F) << 6) | (c1 & 0x3F))
+    });
   }
 
   // 3-byte UTF-8: U+0800-U+FFFF
@@ -104,7 +103,7 @@ pub const fn decode_utf8_char(
 
     let c1 = bytes[position + 1] as u32;
     let c2 = bytes[position + 2] as u32;
-    if ((c1 | c2) & 0xC0) != 0x80 {
+    if (c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80 {
       return Err(Utf8Error::InvalidContinuationByte);
     }
 
@@ -134,14 +133,11 @@ pub const fn decode_utf8_char(
     // ├──────────┼──────────┼──────────┼──────────┤
     // │ ........ │ ........ │ xxxxYYYY │ yyzzzzzz │
     // └──────────┴──────────┴──────────┴──────────┘
-    return Ok((
-      unsafe {
-        char::from_u32_unchecked(
-          ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F),
-        )
-      },
-      3,
-    ));
+    return Ok(unsafe {
+      char::from_u32_unchecked(
+        ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F),
+      )
+    });
   }
 
   // 4-byte UTF-8: U+10000-U+10FFFF
@@ -157,7 +153,7 @@ pub const fn decode_utf8_char(
     let c1 = bytes[position + 1] as u32;
     let c2 = bytes[position + 2] as u32;
     let c3 = bytes[position + 3] as u32;
-    if ((c1 | c2 | c3) & 0xC0) != 0x80 {
+    if (c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 {
       return Err(Utf8Error::InvalidContinuationByte);
     }
 
@@ -187,17 +183,14 @@ pub const fn decode_utf8_char(
     // ├──────────┼──────────┼──────────┼──────────┤
     // │ ........ │ ...WWWXX │ xxxxYYYY │ yyzzzzzz │
     // └──────────┴──────────┴──────────┴──────────┘
-    return Ok((
-      unsafe {
-        char::from_u32_unchecked(
-          ((c0 & 0x07) << 18)
-            | ((c1 & 0x3F) << 12)
-            | ((c2 & 0x3F) << 6)
-            | (c3 & 0x3F),
-        )
-      },
-      4,
-    ));
+    return Ok(unsafe {
+      char::from_u32_unchecked(
+        ((c0 & 0x07) << 18)
+          | ((c1 & 0x3F) << 12)
+          | ((c2 & 0x3F) << 6)
+          | (c3 & 0x3F),
+      )
+    });
   }
 
   Err(Utf8Error::InvalidLeadingByte)
@@ -224,10 +217,7 @@ pub const fn decode_utf8_char(
 /// decode_utf8_char_or_panic(&[0xFF], 0);
 /// ```
 #[track_caller]
-pub const fn decode_utf8_char_or_panic(
-  bytes: &[u8],
-  position: usize,
-) -> (char, usize) {
+pub const fn decode_utf8_char_or_panic(bytes: &[u8], position: usize) -> char {
   match decode_utf8_char(bytes, position) {
     Ok(value) => value,
     Err(Utf8Error::EmptyInput) => {
@@ -274,10 +264,10 @@ pub const fn utf16_length_or_panic(bytes: &[u8]) -> usize {
   let (mut utf16_length, mut position) = (0usize, 0usize);
 
   while position < bytes.len() {
-    let (codepoint, utf8_length) = decode_utf8_char_or_panic(bytes, position);
+    let codepoint = decode_utf8_char_or_panic(bytes, position);
     // Characters outside the BMP are represented using a UTF-16 surrogate pair.
     utf16_length += codepoint.len_utf16();
-    position += utf8_length;
+    position += codepoint.len_utf8();
   }
 
   utf16_length
@@ -311,16 +301,17 @@ pub const fn utf16_length_or_panic(bytes: &[u8]) -> usize {
 pub const fn convert_utf8_to_utf16_or_panic(input: &[u8], output: &mut [u16]) {
   let (mut input_position, mut output_position) = (0usize, 0usize);
   let mut utf16_buffer = [0x0u16; char::MAX_LEN_UTF16];
+
   while input_position < input.len() {
-    let (codepoint, utf8_length) =
-      decode_utf8_char_or_panic(input, input_position);
-    input_position += utf8_length;
+    let codepoint = decode_utf8_char_or_panic(input, input_position);
     let (mut i, bytes) = (0, codepoint.encode_utf16(&mut utf16_buffer));
     while i < bytes.len() {
       output[output_position] = bytes[i];
       output_position += 1;
       i += 1;
     }
+
+    input_position += codepoint.len_utf8();
   }
 }
 
@@ -330,22 +321,22 @@ mod tests {
 
   #[test]
   fn decodes_single_byte_utf8() {
-    assert_eq!(decode_utf8_char("A".as_bytes(), 0), Ok(('A', 1)));
+    assert_eq!(decode_utf8_char("AA".as_bytes(), 1), Ok('A'));
   }
 
   #[test]
   fn decodes_two_byte_utf8() {
-    assert_eq!(decode_utf8_char("é".as_bytes(), 0), Ok(('é', 2)));
+    assert_eq!(decode_utf8_char("éé".as_bytes(), 2), Ok('é'));
   }
 
   #[test]
   fn decodes_three_byte_utf8() {
-    assert_eq!(decode_utf8_char("小".as_bytes(), 0), Ok(('小', 3)));
+    assert_eq!(decode_utf8_char("小小".as_bytes(), 3), Ok('小'));
   }
 
   #[test]
   fn decodes_four_byte_utf8() {
-    assert_eq!(decode_utf8_char("😀".as_bytes(), 0), Ok(('😀', 4)));
+    assert_eq!(decode_utf8_char("😀😀".as_bytes(), 4), Ok('😀'));
   }
 
   #[test]
