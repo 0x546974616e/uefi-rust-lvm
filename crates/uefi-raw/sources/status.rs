@@ -91,6 +91,50 @@ impl EFI_STATUS {
   pub const fn is_error(self) -> bool {
     self.0 >= Self::MAX_BIT
   }
+
+  /// Returns if the status indicates success or a warning.
+  ///
+  /// Because this function may panic, its use is generally discouraged.  Panics
+  /// are meant for unrecoverable errors, and [may abort the entire
+  /// program][panic-abort].  Instead, prefer to use [`is_success()`],
+  /// [`is_warning()`] or [`is_error()`].
+  ///
+  /// [panic-abort]: https://doc.rust-lang.org/book/ch09-01-unrecoverable-errors-with-panic.html
+  /// [`is_success()`]: Self::is_success
+  /// [`is_warning()`]: Self::is_warning
+  /// [`is_error()`]: Self::is_error
+  ///
+  /// # Panics
+  ///
+  /// Panics if [`is_error()`] returns `true`. The panic message includes the
+  /// human-readable description of the error when the status code is known, or
+  /// the numeric status value otherwise.
+  ///
+  /// # Example
+  ///
+  /// ```rust
+  /// # use uefi_raw::EFI_SUCCESS;
+  /// let status = EFI_SUCCESS;
+  /// status.unwrap();
+  /// ```
+  ///
+  /// ```rust
+  /// # use uefi_raw::EFI_WARN_BUFFER_TOO_SMALL;
+  /// let status = EFI_WARN_BUFFER_TOO_SMALL;
+  /// status.unwrap();
+  /// ```
+  ///
+  /// ```rust,should_panic
+  /// # use uefi_raw::EFI_ACCESS_DENIED;
+  /// let status = EFI_ACCESS_DENIED;
+  /// status.unwrap();
+  /// ```
+  #[track_caller]
+  pub fn unwrap(self) {
+    if self.is_error() {
+      panic!("UEFI error: {}", self);
+    }
+  }
 }
 
 macro_rules! uefi_status {

@@ -55,6 +55,7 @@ uefi_type! {
 
 /// 😈
 // pub const NULL: *const VOID = ptr::null();
+#[must_use]
 pub const fn NULL<T>() -> *const T {
   ptr::null()
 }

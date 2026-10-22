@@ -59,6 +59,29 @@ uefi_function! {
   ) -> EFI_STATUS;
 }
 
+uefi_function! {
+  #[version(2.11, "7.2.5")]
+  /// Returns pool memory to the system.
+  ///
+  /// # Parameters
+  ///
+  /// * `Buffer` - Pointer to the buffer to free.
+  ///
+  /// # Description
+  ///
+  /// The `FreePool()` function returns the memory specified by `Buffer` to the
+  /// system. On return, the memory’s type is `EfiConventionalMemory`. The
+  /// `Buffer` that is freed must have been allocated by `AllocatePool()`.
+  ///
+  /// # Errors
+  ///
+  /// * `EFI_SUCCESS`           - The memory was returned to the system.
+  /// * `EFI_INVALID_PARAMETER` - `Buffer` was invalid.
+  pub fn EFI_FREE_POOL for EFI_BOOT_SERVICES::FreePool(
+    #[in] Buffer: *const VOID,
+  ) -> EFI_STATUS;
+}
+
 uefi_enum! {
   #[version(2.11, "7.3.6")]
   /// Enumeration of *EFI Locate Search Types*.
@@ -87,6 +110,72 @@ uefi_enum! {
     /// for this search type.
     ByProtocol = 2,
   }
+}
+
+uefi_function! {
+  #[version(2.11, "7.3.7")]
+  /// Queries a handle to determine if it supports a specified protocol.
+  ///
+  /// # Parameters
+  ///
+  /// * `Handle`    - The handle being queried. If `Handle` is `NULL`, then
+  ///                 `EFI_INVALID_PARAMETER` is returned.
+  /// * `Protocol`  - The published unique identifier of the protocol. It is the
+  ///                 caller's responsibility to pass in a valid GUID. For a
+  ///                 description of valid GUID values, see "Links to
+  ///                 UEFI-Related Documents" (<http://uefi.org/uefi>) under the
+  ///                 heading "RFC 4122".
+  /// * `Interface` - Supplies the address where a pointer to the corresponding
+  ///                 `Protocol` interface is returned. `NULL` will be returned
+  ///                 in `*Interface` if a structure is not associated with
+  ///                 `Protocol`.
+  ///
+  /// # Description
+  ///
+  /// The `HandleProtocol()` function queries `Handle` to determine if it
+  /// supports `Protocol`. If it does, then on return `Interface` points to a
+  /// pointer to the corresponding protocol interface. `Interface` can then be
+  /// passed to any protocol service to identify the context of the request.
+  ///
+  /// # EFI 1.10 Extension
+  ///
+  /// The `HandleProtocol()` function is still available for use by old EFI
+  /// applications and drivers. However, all new applications and drivers
+  /// should use `OpenProtocol()` in place of `HandleProtocol()`. The following
+  /// code fragment shows a possible implementation of `HandleProtocol()` using
+  /// `OpenProtocol()`. The variable `EfiCoreImageHandle` is the image handle of
+  /// the EFI core.
+  ///
+  /// ```c
+  /// EFI_STATUS
+  /// HandleProtocol(
+  ///   IN EFI_HANDLE Handle,
+  ///   IN EFI_GUID *Protocol,
+  ///   OUT VOID** Interface)
+  /// {
+  ///   return OpenProtocol(
+  ///     Handle,
+  ///     Protocol,
+  ///     Interface,
+  ///     EfiCoreImageHandle,
+  ///     NULL,
+  ///     EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL
+  ///   );
+  /// }
+  /// ```
+  ///
+  /// # Errors
+  ///
+  /// * `EFI_SUCCESS`           - The interface information for the specified
+  ///                             protocol was returned.
+  /// * `EFI_UNSUPPORTED`       - The device does not support the specified
+  ///                             protocol.
+  /// * `EFI_INVALID_PARAMETER` - `Buffer`, `Protocol` or `Interface` is `NULL`.
+  pub fn EFI_HANDLE_PROTOCOL for EFI_BOOT_SERVICES::HandleProtocol(
+    #[in] Handle: EFI_HANDLE,
+    #[in] Protocol: *const EFI_GUID,
+    #[out] Interface: *mut *const VOID,
+  ) -> EFI_STATUS;
 }
 
 uefi_function! {
@@ -184,7 +273,7 @@ uefi_struct! {
     AllocatePool: #[todo], // EFI 1.0+
 
     /// Frees allocated pool.
-    FreePool: #[todo], // EFI 1.0+
+    FreePool: #[function] EFI_FREE_POOL, // EFI 1.0+
 
     ////////////////////////// Event & Timer Services //////////////////////////
 
@@ -218,7 +307,7 @@ uefi_struct! {
     UninstallProtocolInterface: #[todo], // EFI 1.0+
 
     /// Queries a handle to determine if it supports a specified protocol.
-    HandleProtocol: #[todo], // EFI 1.0+
+    HandleProtocol: #[function] EFI_HANDLE_PROTOCOL, // EFI 1.0+
 
     /// Reserved. Must be `NULL`.
     Reserved: *const VOID, // EFI 1.0+

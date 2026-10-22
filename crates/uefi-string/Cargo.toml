@@ -1,0 +1,8 @@
+[package]
+name = "uefi-string"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "uefi_string"
+path = "sources/library.rs"

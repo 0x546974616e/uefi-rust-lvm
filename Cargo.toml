@@ -6,6 +6,7 @@ members = [ "crates/*" ]
 uefi-app = { path = "crates/uefi-app" }
 uefi-print = { path = "crates/uefi-print" }
 uefi-raw = { path = "crates/uefi-raw" }
+uefi-string = { path = "crates/uefi-string" }
 
 [profile.dev]
 panic = "abort"

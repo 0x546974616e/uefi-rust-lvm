@@ -21,6 +21,21 @@ macro_rules! uefi_version {
 }
 
 #[macro_export]
+macro_rules! uefi_guid {
+  (
+    #[version($($GUID_VERSION:literal),+)]
+    $(#[$GUID_ATTRIBUTE:meta])*
+    $GUID_VISIBILITY:vis const $GUID_NAME:ident = $GUID_VALUE:literal;
+  ) => {
+    $(#[$GUID_ATTRIBUTE])*
+    #[doc = ""]
+    #[doc = $crate::uefi_version!($($GUID_VERSION),+)]
+    $GUID_VISIBILITY const $GUID_NAME: $crate::EFI_GUID =
+      $crate::EFI_GUID::parse_or_panic($GUID_VALUE);
+  };
+}
+
+#[macro_export]
 macro_rules! uefi_type {
   (
     #[version($($TYPE_VERSION:literal),+)]

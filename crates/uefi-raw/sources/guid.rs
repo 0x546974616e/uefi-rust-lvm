@@ -223,8 +223,10 @@ impl EFI_GUID {
   ///
   /// # Description
   ///
-  /// The first three fields are stored in **little-endian** byte order. The
-  /// remaining eight bytes are stored in the order they appear in the string.
+  /// The input must be in `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` format, where
+  /// each `x` is any hexadecimal digit. The first three fields are stored in
+  /// **little-endian** byte order. The remaining eight bytes are stored in the
+  /// order they appear in the string.
   ///
   /// Returns [`GuidParserError`] if the string has an invalid length,
   /// separators, or hexadecimal characters.
@@ -239,6 +241,44 @@ impl EFI_GUID {
   pub const fn try_parse(string: &str) -> Result<Self, GuidParserError> {
     inner::parse_guid(string)
   }
+
+  /// Parses a GUID from a string, panicking on failure.
+  ///
+  /// # Description
+  ///
+  /// The input must be in `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` format, where
+  /// each `x` is any hexadecimal digit (any of `0-9`, `a-f`, or `A-F`). The
+  /// first three fields are stored in **little-endian** byte order. The
+  /// remaining eight bytes are stored in the order they appear in the string.
+  ///
+  /// # Panics
+  ///
+  /// This function will panic if the input does not match the format described
+  /// above. Specifically, it will panic if the input is not exactly 36 bytes
+  /// long, if the separators are missing or misplaced, or if any of the
+  /// remaining characters are not valid hexadecimal digits.
+  ///
+  /// # Example
+  ///
+  /// ```rust,should_panic
+  /// # use uefi_raw::EFI_GUID;
+  /// let _guid = EFI_GUID::parse_or_panic("1234");
+  /// ```
+  #[track_caller]
+  pub const fn parse_or_panic(string: &str) -> Self {
+    match EFI_GUID::try_parse(string) {
+      Ok(guid) => guid,
+      Err(GuidParserError::Length(_)) => {
+        panic!("GUID string has wrong length (expected 36 bytes)");
+      }
+      Err(GuidParserError::Separator(_)) => {
+        panic!("GUID string is missing one or more separators (`-`)");
+      }
+      Err(GuidParserError::Digit(_)) => {
+        panic!("GUID string contains one or more invalid characters");
+      }
+    }
+  }
 }
 
 impl fmt::Display for EFI_GUID {
@@ -248,7 +288,7 @@ impl fmt::Display for EFI_GUID {
   ///
   /// ```rust
   /// use uefi_raw::EFI_GUID;
-  /// // See the `EFI_GUID::from_u128()` for details.
+  /// // See `EFI_GUID::from_u128()` for details.
   /// let guid: EFI_GUID = 0x123456789ABCDEF0123456789ABCDEF0.into();
   /// assert_eq!(format!("{guid:?}"), "12345678-9ABC-DEF0-1234-56789ABCDEF0");
   /// ```
@@ -290,10 +330,12 @@ mod inner {
 
   /// Unwraps a result or propagates its error.
   ///
-  /// * (2026-10-19) `Try` and `FromResidual` is not yet stable as a const
-  ///   trait.
+  /// # Notes
+  /// *(2026-10-19)*
   ///
-  /// * `?` is not allowed on `Result<u8, guid::GuidParserError>` in constant
+  /// - `Try` and `FromResidual` is not yet stable as a const trait.
+  ///
+  /// - `?` is not allowed on `Result<u8, guid::GuidParserError>` in constant
   ///   functions calls in constant functions are limited to constant functions,
   ///   tuple structs and tuple variants. see issue [#143874] for more
   ///   information.
@@ -335,7 +377,7 @@ mod inner {
   pub const fn parse_guid(string: &str) -> Result<EFI_GUID, GuidParserError> {
     let bytes = string.as_bytes();
     if bytes.len() != 36 {
-      return Err(GuidParserError::Length(string.len()));
+      return Err(GuidParserError::Length(bytes.len()));
     }
 
     if bytes[8] != SEPARATOR {

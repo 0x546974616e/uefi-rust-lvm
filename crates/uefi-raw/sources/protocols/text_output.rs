@@ -1,10 +1,11 @@
 use crate::{BOOLEAN, CHAR16, EFI_STATUS, INT32};
 
-// #[guid]
-// pub const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID = {
-//   0x387477C2, 0x69C7, 0x11D2,
-//     { 0x8E, 0x39, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3b }
-// }
+uefi_guid! {
+  #[version(2.11, "12.4.1")]
+  /// This protocol is used to control text-based output devices.
+  pub const EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID =
+    "387477C2-69C7-11D2-8E39-00A0C969723B";
+}
 
 uefi_struct! {
   #[version(2.11, "12.4.1")]

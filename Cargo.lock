@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "uefi-print",
  "uefi-raw",
+ "uefi-string",
 ]
 
 [[package]]
@@ -23,4 +24,8 @@ version = "0.1.0"
 
 [[package]]
 name = "uefi-runner"
+version = "0.1.0"
+
+[[package]]
+name = "uefi-string"
 version = "0.1.0"
